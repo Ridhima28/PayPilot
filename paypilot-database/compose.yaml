@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+
+    environment:
+      POSTGRES_DB: paypilot
+      POSTGRES_USER: paypilot
+      POSTGRES_PASSWORD: local_development_only
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    volumes:
+      # Keeps database data when the container stops.
+      - paypilot_data:/var/lib/postgresql/data
+
+      # Creates the tables the first time the database starts.
+      - ./supabase/migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+      # Adds fictional sample data the first time the database starts.
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paypilot -d paypilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  paypilot_data:
